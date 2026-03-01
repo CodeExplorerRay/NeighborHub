@@ -1,9 +1,4 @@
 {
-  "rewrites": [
-    {
-      "source": "/((?!.*\\.(js|css|png|jpg|jpeg|svg|ico|json)$).*)",
-      "destination": "/index.html"
-    }
-  ],
+  "rewrites": [ { "source": "/(.*)", "destination": "/index.html" } ],
   "builds": [ { "src": "public/**/*", "use": "@vercel/static" } ]
 }
