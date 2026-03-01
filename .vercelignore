@@ -1,4 +1,5 @@
-# ignore everything except the static public folder
-*
-!public/
-!public/**
+# only ignore local development artifacts
+node_modules/
+data/
+.firebase/
+.firebase-debug.log
