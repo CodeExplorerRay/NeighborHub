@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Admin/moderator UIDs
+    function isAdmin() {
+      return request.auth != null && (
+        request.auth.uid == 'yYV8n0hoqtd3ZWAu6HULsChtFBn1' ||
+        request.auth.uid == '5qUQvAsHF6YiFlRgYCQY0pxHC2y1'
+      );
+    }
+
+    // Default: allow public reads, require auth for writes
+    match /{document=**} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // POSTS (more specific rules override defaults)
+    match /posts/{postId} {
+      allow read: if true;
+      // require basic fields and ownership
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasAll(['id','authorId','body']) &&
+        request.resource.data.authorId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
+      
+      // COMMENTS SUBCOLLECTION
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+        allow update: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
+        allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isAdmin());
+      }
+    }
+
+    // EVENTS
+    match /events/{eventId} {
+      allow read: if true;
+      allow create: if isSignedIn() &&
+        request.resource.data.organizerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.organizerId == request.auth.uid || isAdmin());
+    }
+
+    // TOOLS
+    match /tools/{toolId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
+    // MUTUAL AID
+    match /aidRequests/{reqId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.requesterId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.requesterId == request.auth.uid || isAdmin());
+    }
+    match /aidOffers/{offId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.offererId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.offererId == request.auth.uid || isAdmin());
+    }
+
+    // DIRECTORY
+    match /directory/{entryId} {
+      // guests may not view the directory; only authenticated neighbors
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+
+    // LOST & FOUND
+    match /lostfound/{lfId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+    }
+    
+    // USERS (for welcome tracking + notifications + settings)
+    match /users/{userId} {
+      allow read: if request.auth.uid == userId || isAdmin();
+      allow create, update: if request.auth.uid == userId;
+      allow delete: if isAdmin();
+    }
+    
+    // REPORTS (for moderation)
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn() && request.resource.data.reporterId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+  }
+}

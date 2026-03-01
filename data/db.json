@@ -1,0 +1,83 @@
+{
+  "posts": [
+    {
+      "id": 1,
+      "author": "Maria Rodriguez",
+      "initials": "MR",
+      "color": "linear-gradient(135deg,#E76F51,#F4A261)",
+      "street": "Maple Street",
+      "time": "2 hours ago",
+      "tag": "Announcement",
+      "body": "Hey neighbors! 🎉 The city approved our community garden on the vacant lot at Oak & 5th. First planning meeting this Saturday at 10am at the community center. All are welcome — whether you want to grow veggies, flowers, or just hang out!",
+      "likes": 24,
+      "liked": false,
+      "comments": 8
+    }
+  ],
+  "events": [
+    {
+      "id": 1,
+      "name": "Community Garden Planning",
+      "icon": "🌻",
+      "date": "Jan 25",
+      "time": "Sat 10:00 AM - 12:00 PM",
+      "location": "Community Center, Room B",
+      "host": "Maria Rodriguez",
+      "going": 21,
+      "rsvp": false,
+      "bg": "linear-gradient(135deg,#D5F5E3,#82E0AA)"
+    }
+  ],
+  "tools": [
+    {
+      "id": 1772220740533,
+      "name": "LADDER",
+      "icon": "📦",
+      "cat": "garden",
+      "owner": "You",
+      "street": "Your Street",
+      "available": false,
+      "color": "#D5F5E3"
+    }
+  ],
+  "aidRequests": [
+    {
+      "id": 1,
+      "title": "Need a ride to airport",
+      "desc": "Flying out Tuesday morning, can anyone help with a lift?",
+      "urgency": "high",
+      "author": "Sophia Lee",
+      "initials": "SL",
+      "color": "linear-gradient(135deg,#74B9FF,#0984E3)"
+    }
+  ],
+  "aidOffers": [
+    {
+      "id": 2,
+      "title": "Can help with grocery runs",
+      "desc": "Available weekends, happy to pick up essentials.",
+      "author": "Eric Wong",
+      "initials": "EW",
+      "color": "linear-gradient(135deg,#55EFC4,#00CEC9)"
+    }
+  ],
+  "directory": [
+    {
+      "id": 1,
+      "name": "Maria Rodriguez",
+      "street": "Maple Street",
+      "tags": ["Gardening","Events"],
+      "initials": "MR",
+      "color": "#E76F51"
+    }
+  ],
+  "lostfound": [
+    {
+      "id": 1,
+      "type": "lost",
+      "title": "Lost wallet",
+      "desc": "Black leather wallet lost near Oak & 5th on Friday.",
+      "contact": "maria@example.com"
+    }
+  ]
+}

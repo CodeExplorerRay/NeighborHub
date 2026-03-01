@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeighborHub - Your Community, Connected</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+<!-- Firebase SDK (compat for simpler migration) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-check-compat.js"></script>
+</head>
+<body>
+
+<!-- ===== TOP NAV ===== -->
+<nav class="topnav">
+ <div class="topnav-inner">
+  <a href="#" class="logo"><div class="logo-box">🏘️</div>NeighborHub</a>
+   <div class="nav-right">
+   <button class="nav-btn auth-required" onclick="openNotifications()">🔔<span class="badge">3</span></button>
+   <button class="nav-btn" id="adminPanelBtn" onclick="openAdminPanel()" style="display:none" title="Admin Panel">⚙️</button>
+   <button class="btn btn-p" id="signInBtn" onclick="toggleAuth()" style="display:none">Sign In</button>
+   <div class="avatar" id="userAvatar" title="Click to sign in/out" onclick="toggleAuth()" style="cursor:pointer;display:none">AM</div>
+  </div>
+ </div>
+</nav>
+
+<!-- ===== TABS ===== -->
+<div class="tabs">
+ <div class="tabs-inner">
+  <button class="tab active" data-tab="board">📢 <span class="tab-text">Board</span></button>
+  <!-- auth-required controls are hidden until sign-in -->
+  <button class="tab" data-tab="events">📅 <span class="tab-text">Events</span> <span class="tab-badge">3</span></button>
+  <button class="tab" data-tab="tools">🔧 <span class="tab-text">Tools</span></button>
+  <button class="tab" data-tab="aid">🤝 <span class="tab-text">Mutual Aid</span> <span class="tab-badge">5</span></button>
+    <button class="tab" data-tab="directory">📍 <span class="tab-text">Directory</span></button>
+  <button class="tab" data-tab="lostfound">🔎 <span class="tab-text">Lost & Found</span></button>
+ </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<main class="main">
+
+<!-- ===== BOARD PANEL ===== -->
+<div id="panel-board" class="panel active">
+ <div class="board-layout">
+  <div>
+   <!-- Composer -->
+   <div class="card" id="composerCard">
+    <div class="composer-row">
+     <div class="post-av" style="background:linear-gradient(135deg,var(--accent),var(--accent-light));width:38px;height:38px;font-size:.75rem">AM</div>
+     <button class="composer-trigger" id="composerTrigger">Share something with the neighborhood...</button>
+    </div>
+    <div class="composer-full" id="composerFull">
+     <textarea id="postInput" placeholder="What's on your mind?"></textarea>
+     <div class="tag-pills" id="tagPills">
+      <span class="tag-pill" data-tag="Announcement">📢 Announcement</span>
+      <span class="tag-pill" data-tag="Discussion">💬 Discussion</span>
+      <span class="tag-pill" data-tag="Question">❓ Question</span>
+      <span class="tag-pill" data-tag="Social">🎉 Social</span>
+      <span class="tag-pill" data-tag="Alert">⚠️ Alert</span>
+     </div>
+     <div class="composer-foot">
+      <button class="btn btn-p" id="postBtn">Post</button>
+     </div>
+    </div>
+   </div>
+
+   <!-- Feed -->
+   <div id="feed">
+    <!-- Posts injected by JS -->
+   </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+   <div class="card">
+    <div class="sb-title">🌤️ Local Weather</div>
+    <div class="weather-center">
+    <div class="weather-icon">⛅</div>
+    <div id="weather-temp" class="weather-temp">72°F</div>
+     <div class="weather-desc">Partly cloudy — great for a walk!</div>
+    </div>
+   </div>
+   <div class="card">
+    <div class="sb-title">📊 Community Stats</div>
+    <div class="stats-grid">
+     <div class="stat"><div class="stat-num" id="statNeighbors">148</div><div class="stat-lbl">Neighbors</div></div>
+     <div class="stat"><div class="stat-num" id="statShared">23</div><div class="stat-lbl">Items Shared</div></div>
+     <div class="stat"><div class="stat-num" id="statHelped">67</div><div class="stat-lbl">Helped</div></div>
+     <div class="stat"><div class="stat-num" id="statEvents">12</div><div class="stat-lbl">Events</div></div>
+    </div>
+   </div>
+   <div class="card">
+    <div class="sb-title">⚡ Quick Links</div>
+    <ul class="links">
+     <li onclick="toast('🗑️ Trash pickup: Thursday 7AM')">🗑️ Trash Schedule</li>
+     <li onclick="toast('📞 Emergency: 911 | Non-emergency: 555-0123')">📞 Emergency Numbers</li>
+     <li onclick="toast('🏛️ Next council meeting: Feb 15')">🏛️ City Council</li>
+     <li onclick="toast('📜 Be kind, be helpful, be a neighbor!')">📜 Guidelines</li>
+    </ul>
+   </div>
+  </div>
+ </div>
+</div>
+
+<!-- ===== EVENTS PANEL ===== -->
+<div id="panel-events" class="panel">
+ <div class="section-header">
+  <div class="section-title">📅 Upcoming Events</div>
+  <button class="btn btn-p" onclick="openModal('eventModal')">+ New Event</button>
+ </div>
+ <div class="ev-grid" id="eventsGrid">
+  <!-- Injected by JS -->
+ </div>
+</div>
+
+<!-- ===== TOOLS PANEL ===== -->
+<div id="panel-tools" class="panel">
+ <div class="section-header">
+  <div class="section-title">🔧 Tool Library</div>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+   <div class="search"><span>🔍</span><input id="toolSearch" placeholder="Search tools..." oninput="filterTools()"></div>
+   <button class="btn btn-p auth-required" onclick="openModal('toolModal')">+ List Item</button>
+  </div>
+ </div>
+ <div class="filters" id="toolFilters">
+  <button class="filter-btn active" data-cat="all">All</button>
+  <button class="filter-btn" data-cat="power">⚡ Power Tools</button>
+  <button class="filter-btn" data-cat="garden">🌱 Garden</button>
+  <button class="filter-btn" data-cat="kitchen">🍳 Kitchen</button>
+  <button class="filter-btn" data-cat="outdoor">🏕️ Outdoor</button>
+  <button class="filter-btn" data-cat="cleaning">🧹 Cleaning</button>
+ </div>
+ <div class="tools-grid" id="toolsGrid">
+  <!-- Injected by JS -->
+ </div>
+</div>
+
+<!-- ===== MUTUAL AID PANEL ===== -->
+<div id="panel-aid" class="panel">
+ <div class="section-header">
+  <div class="section-title">🤝 Mutual Aid Board</div>
+  <div style="display:flex;gap:8px">
+   <button class="btn btn-accent auth-required" onclick="openModal('aidRequestModal')">🙋 Request Help</button>
+   <button class="btn btn-p auth-required" onclick="openModal('aidOfferModal')">💚 Offer Help</button>
+  </div>
+ </div>
+ <div class="aid-grid">
+  <div>
+   <div class="aid-col-title">🙋 Requests</div>
+   <div id="aidRequests"></div>
+  </div>
+  <div>
+   <div class="aid-col-title">💚 Offers</div>
+   <div id="aidOffers"></div>
+  </div>
+ </div>
+</div>
+
+<!-- ===== DIRECTORY PANEL ===== -->
+<div id="panel-directory" class="panel">
+ <div class="section-header">
+  <div class="section-title">📍 Neighborhood Directory</div>
+  <div class="search"><span>🔍</span><input id="dirSearch" placeholder="Search neighbors..." oninput="filterDir()"></div>
+ </div>
+ <div class="dir-grid" id="dirGrid">
+  <!-- Injected by JS -->
+ </div>
+</div>
+
+<!-- ===== LOST & FOUND PANEL ===== -->
+<div id="panel-lostfound" class="panel">
+ <div class="section-header">
+  <div class="section-title">🔎 Lost & Found</div>
+  <div style="display:flex;gap:8px">
+   <button class="btn btn-p auth-required" onclick="openModal('lfModal')">+ Report Item</button>
+  </div>
+ </div>
+ <div class="card">
+  <div id="lfList"></div>
+ </div>
+</div>
+</main>
+
+<!-- ===== MODALS ===== -->
+<!-- Event Modal -->
+<div class="modal-bg" id="eventModal" onclick="if(event.target===this)closeModal(this.id)">
+ <div class="modal">
+  <div class="modal-title">📅 Create New Event</div>
+  <div class="fg"><label>Event Name</label><input id="evName" placeholder="Block Party, Book Club..."></div>
+  <div class="fg"><label>Date & Time</label><input id="evDate" type="datetime-local"></div>
+  <div class="fg"><label>Location</label><input id="evLocation" placeholder="Community Center, your backyard..."></div>
+  <div class="fg"><label>Description</label><textarea id="evDesc" placeholder="What's this event about?"></textarea></div>
+  <div class="fg"><label>Icon (emoji)</label><input id="evIcon" placeholder="🎉" maxlength="2" style="width:60px"></div>
+  <div class="modal-foot">
+   <button class="btn btn-s" onclick="closeModal('eventModal')">Cancel</button>
+   <button class="btn btn-p auth-required" onclick="postEvent()">Create Event</button>
+  </div>
+ </div>
+</div>
+
+<!-- Tool Modal -->
+<div class="modal-bg" id="toolModal" onclick="if(event.target===this)closeModal(this.id)">
+ <div class="modal">
+  <div class="modal-title">🔧 List an Item to Share</div>
+  <div class="fg"><label>Item Name</label><input id="tlName" placeholder="Power drill, ladder, stand mixer..."></div>
+  <div class="fg"><label>Category</label>
+   <select id="tlCat">
+    <option value="power">⚡ Power Tools</option>
+    <option value="garden">🌱 Garden</option>
+    <option value="kitchen">🍳 Kitchen</option>
+    <option value="outdoor">🏕️ Outdoor</option>
+    <option value="cleaning">🧹 Cleaning</option>
+   </select>
+  </div>
+  <div class="fg"><label>Icon (emoji)</label><input id="tlIcon" placeholder="🔨" maxlength="2" style="width:60px"></div>
+  <div class="modal-foot">
+   <button class="btn btn-s" onclick="closeModal('toolModal')">Cancel</button>
+   <button class="btn btn-p" onclick="createTool()">List Item</button>
+  </div>
+ </div>
+</div>
+
+<!-- Aid Request Modal -->
+<div class="modal-bg" id="aidRequestModal" onclick="if(event.target===this)closeModal(this.id)">
+ <div class="modal">
+  <div class="modal-title">🙋 Request Help</div>
+  <div class="fg"><label>What do you need?</label><input id="arTitle" placeholder="Ride to airport, pet sitting..."></div>
+  <div class="fg"><label>Details</label><textarea id="arDesc" placeholder="Describe what you need..."></textarea></div>
+  <div class="fg"><label>Urgency</label>
+   <select id="arUrg"><option value="low">Low</option><option value="med" selected>Medium</option><option value="high">High</option></select>
+  </div>
+  <div class="modal-foot">
+   <button class="btn btn-s" onclick="closeModal('aidRequestModal')">Cancel</button>
+   <button class="btn btn-accent" onclick="createAidRequest()">Post Request</button>
+  </div>
+ </div>
+</div>
+
+<!-- Aid Offer Modal -->
+<div class="modal-bg" id="aidOfferModal" onclick="if(event.target===this)closeModal(this.id)">
+ <div class="modal">
+  <div class="modal-title">💚 Offer Help</div>
+  <div class="fg"><label>What can you help with?</label><input id="aoTitle" placeholder="Dog walking, moving boxes..."></div>
+  <div class="fg"><label>Details</label><textarea id="aoDesc" placeholder="Describe your offer..."></textarea></div>
+  <div class="modal-foot">
+   <button class="btn btn-s" onclick="closeModal('aidOfferModal')">Cancel</button>
+   <button class="btn btn-p" onclick="createAidOffer()">Post Offer</button>
+  </div>
+ </div>
+</div>
+
+<!-- Notifications Modal -->
+<div class="modal-bg" id="notificationsModal" onclick="if(event.target===this)closeModal(this.id)">
+ <div class="modal" style="max-width:500px;max-height:70vh;overflow-y:auto">
+  <div class="modal-title">🔔 Notifications</div>
+  <div id="notificationsList" style="display:flex;flex-direction:column;gap:10px">
+   <!-- Injected by JS -->
+  </div>
+  <div class="modal-foot">
+   <button class="btn btn-s" onclick="closeModal('notificationsModal')">Close</button>
+  </div>
+ </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="modal-bg" id="adminModal" onclick="if(event.target===this)closeModal(this.id)">
+ <div class="modal" style="max-width:600px;max-height:75vh;overflow-y:auto">
+  <div class="modal-title">⚙️ Admin Panel - Moderation</div>
+  <div style="padding:12px;background:var(--bg-alt);border-radius:8px;margin-bottom:12px;font-size:0.9rem">
+   <strong>🚩 Reported Content</strong> - Review and take action on flagged posts and comments
+  </div>
+  <div id="reportsList" style="display:flex;flex-direction:column;gap:10px">
+   <!-- Injected by JS -->
+  </div>
+  <div class="modal-foot">
+   <button class="btn btn-s" onclick="closeModal('adminModal')">Close</button>
+  </div>
+ </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-box" id="toastBox"></div>
+
+<!-- Lost & Found Modal -->
+<div class="modal-bg" id="lfModal" onclick="if(event.target===this)closeModal(this.id)">
+ <div class="modal">
+  <div class="modal-title">🔎 Report Lost or Found Item</div>
+  <div class="fg"><label>Title</label><input id="lfTitle" placeholder="Lost wallet, Found keys..."></div>
+  <div class="fg"><label>Details</label><textarea id="lfDesc" placeholder="Where/when, identifying info..."></textarea></div>
+  <div class="fg"><label>Lost or Found</label>
+   <select id="lfType"><option value="lost">Lost</option><option value="found">Found</option></select>
+  </div>
+  <div class="fg"><label>Contact Info</label><input id="lfContact" placeholder="Optional: email or phone"></div>
+  <div class="modal-foot">
+   <button class="btn btn-s" onclick="closeModal('lfModal')">Cancel</button>
+   <button class="btn btn-p" onclick="createLostFound()">Post</button>
+  </div>
+ </div>
+</div>
+
+<script src="/firebase-config.js"></script>
+<script src="/firebase-init.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>
