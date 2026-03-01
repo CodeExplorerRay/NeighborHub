@@ -1,0 +1,4 @@
+# ignore everything except the static public folder
+*
+!public/
+!public/**
