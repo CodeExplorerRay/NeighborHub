@@ -1,1 +1,15 @@
 .vercel
+
+# dependencies
+node_modules/
+
+# local data
+data/db.json
+firebase-debug.log
+
+# build output
+dist/
+
+# misc
+.env
+
