@@ -114,9 +114,54 @@ service cloud.firestore {
   `firebase.json` and `firestore.rules` configured. This publishes the `public/`
   folder.
 
+### Environment variables
+
+To avoid leaking your Firebase API key the repo no longer contains a real
+configuration file. Instead, set the following variables locally or in your
+hosting provider and run the helper script before each deployment:
+
+```powershell
+# PowerShell example
+$env:FIREBASE_API_KEY = '<your api key>'
+$env:FIREBASE_AUTH_DOMAIN = 'yourproj.firebaseapp.com'
+$env:FIREBASE_PROJECT_ID = 'yourproj'
+# ..._set other vars as needed...
+node scripts/write-config.js
+```
+
+When using Vercel, add these variables in the Dashboard (`Settings →
+Environment Variables`) or via CLI:
+
+```bash
+vercel env add FIREBASE_API_KEY production
+vercel env add FIREBASE_AUTH_DOMAIN production
+# etc.
+```
+
+During a deploy the CLI (or Vercel build) should run `node scripts/write-config.js`
+first (you can configure this as a `build` command or just call it manually).
+The script will emit `public/firebase-config.js` which is included in the static
+bundle.
+
+If you want to deploy directly from the folder without GitHub you can simply run:
+
+```bash
+npx vercel --prod
+```
+
+and ensure `scripts/write-config.js` has been run beforehand (either manually
+or by setting the Vercel project’s **Build Command** to `node scripts/write-config.js`).
+
+```
 - **Vercel**: the app is purely static, so Vercel can serve the contents of the
-  `public/` directory directly. We already include a `vercel.json` file with
-  rewrite rules to support client-side routing:
+  `public/` directory directly. You can push to GitHub and import the repo, or
+  deploy directly from your local workspace with the CLI (`npx vercel`).
+  The Firebase configuration file is generated at build time from environment
+  variables, so you never have to commit secrets. See the **Environment
+  variables** section below.
+
+  (If you prefer manual configuration, simply create `public/firebase-config.js`
+  locally before deploying and keep it out of source control.)
 
   ```json
   {
