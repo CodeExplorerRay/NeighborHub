@@ -117,16 +117,23 @@ async function loadData(){
   const dev = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
   let fetchError = false;
   try{
-    // if Firestore is configured we try to load from it, otherwise
-    // getCollection will fallback to server and/or throw.
-    posts = await getCollection('posts') || [];
-    events = await getCollection('events') || [];
-    tools = await getCollection('tools') || [];
-    aidRequests = await getCollection('aidRequests') || [];
-    aidOffers = await getCollection('aidOffers') || [];
-    // fetch directory regardless; render will limit fields for guests
-    directory = await getCollection('directory') || [];
-    lostfound = await getCollection('lostfound') || [];
+    // Fetch all collections in parallel using Promise.all() for faster load
+    const [postsData, eventsData, toolsData, aidReqData, aidOffData, dirData, lfData] = await Promise.all([
+      getCollection('posts'),
+      getCollection('events'),
+      getCollection('tools'),
+      getCollection('aidRequests'),
+      getCollection('aidOffers'),
+      getCollection('directory'),
+      getCollection('lostfound')
+    ]);
+    posts = postsData || [];
+    events = eventsData || [];
+    tools = toolsData || [];
+    aidRequests = aidReqData || [];
+    aidOffers = aidOffData || [];
+    directory = dirData || [];
+    lostfound = lfData || [];
   }catch(e){
     console.error('load error',e);
     fetchError = true;

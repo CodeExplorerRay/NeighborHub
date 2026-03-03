@@ -1,5 +1,4 @@
 # only ignore local development artifacts
 node_modules/
-data/
 .firebase/
 .firebase-debug.log
