@@ -39,38 +39,26 @@ let directory = [];
 let lostfound = [];
 
 async function getCollection(name){
-  if(window._db){
-    try{
-      const snap = await _db.collection(name).orderBy('id','desc').get();
-      const results = snap.docs.map(d => d.data());
-      if(Array.isArray(results) && results.length) return results;
-      // if Firestore returned no documents, fall through to Render fallback
-    }catch(e){
-      // ordering may fail or other Firestore error; try a simple get
-      try{
-        const snap = await _db.collection(name).get();
-        const results = snap.docs.map(d => d.data());
-        if(Array.isArray(results) && results.length) return results;
-      }catch(err){
-        // continue to fallback
-      }
-    }
-  }
-  // fallback to Render API for mock data
+  // Always fetch mock data from Render API
   try{
     const resp = await fetch(`https://neighborhub.onrender.com/api/${name}`);
     const json = await resp.json();
     return Array.isArray(json) ? json : [];
-  }catch(e){ return []; }
+  }catch(e){
+    console.warn('Render API fetch failed', e);
+    return [];
+  }
 }
 
 async function addDoc(name, obj){
-  if(window._db){
-    await _db.collection(name).add(obj);
+  // Persist mock data to Render API
+  try{
+    const res = await fetch(`https://neighborhub.onrender.com/api/${name}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});
+    return await res.json();
+  }catch(e){
+    console.warn('addDoc to Render failed', e);
     return obj;
   }
-  const res = await fetch(`https://neighborhub.onrender.com/api/${name}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});
-  return await res.json();
 }
 
 async function updateDocByQuery(name, queryField, queryValue, updates){
@@ -83,7 +71,11 @@ async function updateDocByQuery(name, queryField, queryValue, updates){
   }
   // fallback: try Render PUT endpoints (assumes numeric id and endpoint exists)
   if(updates && updates.id){
-    await fetch(`https://neighborhub.onrender.com/api/${name}/${updates.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updates)});
+    try{
+      await fetch(`https://neighborhub.onrender.com/api/${name}/${updates.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updates)});
+    }catch(e){
+      console.warn('updateDocByQuery to Render failed', e);
+    }
   }
 }
 
