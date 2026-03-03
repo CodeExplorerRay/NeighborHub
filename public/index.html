@@ -4,7 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NeighborHub - Your Community, Connected</title>
+<!-- Favicons: prefer .ico for widest browser support, keep svg as fallback -->
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" href="/favicon.ico">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<!-- Optional: mobile/home screen icon (add file at public/apple-touch-icon.png if desired) -->
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#2D6A4F">
 <link rel="stylesheet" href="/style.css">
 <!-- Firebase SDK (compat for simpler migration) -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -17,7 +23,12 @@
 <!-- ===== TOP NAV ===== -->
 <nav class="topnav">
  <div class="topnav-inner">
-  <a href="#" class="logo"><div class="logo-box">🏘️</div>NeighborHub</a>
+  <a href="#" class="logo">
+    <div class="logo-box">
+      <img src="/logo.png" alt="NeighborHub" class="logo-box-img">
+    </div>
+    <span class="logo-text"><span class="logo-text-primary">Neighbor</span><span class="logo-text-accent">Hub</span></span>
+  </a>
    <div class="nav-right">
    <button class="nav-btn auth-required" onclick="openNotifications()">🔔<span class="badge">3</span></button>
    <button class="nav-btn" id="adminPanelBtn" onclick="openAdminPanel()" style="display:none" title="Admin Panel">⚙️</button>
@@ -305,5 +316,12 @@
 <script src="/firebase-config.js"></script>
 <script src="/firebase-init.js"></script>
 <script src="/app.js"></script>
+
+<!-- ===== FOOTER ===== -->
+<footer class="footer">
+  <a href="/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+  &nbsp;|&nbsp;
+  <a href="/terms.html" target="_blank" rel="noopener">Terms &amp; Conditions</a>
+</footer>
 </body>
 </html>

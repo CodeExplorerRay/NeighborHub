@@ -19,8 +19,11 @@ body.signed-in .auth-required{display:inline-block !important;}
 .topnav{background:rgba(255,255,255,0.97);border-bottom:1px solid rgba(45,106,79,0.1);padding:0 20px;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
 .topnav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:60px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.25rem;color:var(--primary);text-decoration:none}
-.logo-box{width:34px;height:34px;background:linear-gradient(135deg,var(--primary),var(--primary-lighter));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem}
-.nav-right{display:flex;align-items:center;gap:10px}
+.logo-box{width:50px;height: 50px;/* keep space for icon */border-radius:9px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.logo-box-img{width:150%;height:150%;object-fit:contain}/* two-tone branding text */
+.logo-text{display:flex;gap:0 2px;font-size:1.25rem;align-items:center}
+.logo-text-primary{color:var(--primary)}
+.logo-text-accent{color:var(--accent)}.nav-right{display:flex;align-items:center;gap:10px}
 .nav-btn{width:38px;height:38px;border-radius:50%;border:none;background:var(--primary-bg);color:var(--primary);font-size:1rem;cursor:pointer;position:relative;transition:all .2s}
 .nav-btn:hover{background:var(--primary-lightest);transform:scale(1.05)}
 .badge{position:absolute;top:-2px;right:-2px;width:17px;height:17px;background:var(--accent);color:#fff;font-size:.6rem;font-weight:700;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
@@ -173,6 +176,11 @@ aid-btn.done{background:var(--primary-bg)!important;color:var(--primary)!importa
 
 /* SEARCH */
 .search{display:flex;align-items:center;background:var(--white);border:2px solid var(--primary-bg);border-radius:24px;padding:7px 14px;gap:7px;transition:all .2s;min-width:200px}
+
+/* FOOTER */
+.footer{background:var(--white);border-top:1px solid var(--primary-bg);text-align:center;padding:18px 20px;font-size:.85rem;color:var(--text-light);}
+.footer a{color:var(--primary);text-decoration:none;transition:color .2s}
+.footer a:hover{color:var(--primary-light)}
 .search:focus-within{border-color:var(--primary-lighter)}
 .search input{border:none;outline:none;font-size:.88rem;flex:1;color:var(--text);background:transparent}
 .search input::placeholder{color:var(--text-lighter)}
