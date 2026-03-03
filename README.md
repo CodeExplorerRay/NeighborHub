@@ -1,10 +1,22 @@
-# NeighborHub
+<p align="left" style="display: flex; align-items: center;">
+  <img 
+    src="https://github.com/user-attachments/assets/e594e9bd-9a3b-4b66-9fbb-5f7f8d00653c" 
+    width="100"
+    alt="NeighborHub Logo"
+    style="margin-right: 15px;"
+  />
+  <img 
+    src="https://github.com/user-attachments/assets/c78414d3-97e8-47c9-a67d-2ddfa741a7f1" 
+    alt="NeighborHub Title"
+  />
+</p>
 
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Version](https://img.shields.io/badge/version-1.0.0-yellow)
 
-![Screenshot](https://raw.githubusercontent.com/CodeExplorerRay/NeighborHub/main/public/screenshot.png)
+---
+![Screenshot](https://raw.githubusercontent.com/CodeExplorerRay/NeighborHub/refs/heads/main/public/NeighborHub.png)
 
 A simple community application built for neighbors to share events and posts. This project was designed to meet the prompt criteria for a weekend build:
 
