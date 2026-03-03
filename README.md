@@ -1,20 +1,4 @@
-<table border="0" cellpadding="0" cellspacing="0" style="border-collapse: collapse; background: transparent;">
-  <tr>
-    <td style="border: none; padding: 0;">
-      <img 
-        src="https://github.com/user-attachments/assets/e594e9bd-9a3b-4b66-9fbb-5f7f8d00653c" 
-        width="100"
-        alt="NeighborHub Logo"
-      />
-    </td>
-    <td style="border: none; padding-left: 15px; vertical-align: middle;">
-      <img 
-        src="https://github.com/user-attachments/assets/c78414d3-97e8-47c9-a67d-2ddfa741a7f1" 
-        alt="NeighborHub Title"
-      />
-    </td>
-  </tr>
-</table>
+
 
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
