@@ -4,7 +4,7 @@
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Version](https://img.shields.io/badge/version-1.0.0-yellow)
 
-![Screenshot](https://raw.githubusercontent.com/CodeExplorerRay/NeighborHub/main/public/screenshot.png)
+![Screenshot](https://raw.githubusercontent.com/CodeExplorerRay/NeighborHub/refs/heads/main/public/NeighborHub.png))
 
 A simple community application built for neighbors to share events and posts. This project was designed to meet the prompt criteria for a weekend build:
 
