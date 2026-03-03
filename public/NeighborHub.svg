@@ -6,8 +6,8 @@
   </style>
 
   <text x="0" y="70" font-family="Segoe UI, Arial, sans-serif" font-size="64" font-weight="700">
-    <tspan class="neighbor">Neighbor</tspan>
-    <tspan class="hub">Hub</tspan>
+    <tspan class="neighbor">Neighbor</tspan><tspan class="hub">Hub</tspan>
+    
   </text>
 
   <text x="2" y="115" class="subtitle" font-family="Segoe UI, Arial, sans-serif">
