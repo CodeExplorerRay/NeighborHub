@@ -1,7 +1,7 @@
 <p align="left" style="display: flex; align-items: center;">
  
   <img 
-    src="https://raw.githubusercontent.com/CodeExplorerRay/NeighborHub/5f9db71273634aa2ccc88bd5f7f2150ce4fd1539/public/NeighborHub.svg" 
+    src="https://raw.githubusercontent.com/CodeExplorerRay/NeighborHub/47cd40e9e3e73d5443a5b1a7fba185973647af7b/public/NeighborHub.svg" 
     alt="NeighborHub Title"
   />
 </p>
