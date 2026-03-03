@@ -32,11 +32,8 @@ let tools = [];
 let aidRequests = [];
 let aidOffers = [];
 let directory = [];
-
-// ============================================================
-// DATA LOADING (uses Firestore when available)
-// ============================================================
 let lostfound = [];
+let quickLinks = [];
 
 async function getCollection(name){
   let fireData = [];
@@ -118,14 +115,15 @@ async function loadData(){
   let fetchError = false;
   try{
     // Fetch all collections in parallel using Promise.all() for faster load
-    const [postsData, eventsData, toolsData, aidReqData, aidOffData, dirData, lfData] = await Promise.all([
+    const [postsData, eventsData, toolsData, aidReqData, aidOffData, dirData, lfData, qlData] = await Promise.all([
       getCollection('posts'),
       getCollection('events'),
       getCollection('tools'),
       getCollection('aidRequests'),
       getCollection('aidOffers'),
       getCollection('directory'),
-      getCollection('lostfound')
+      getCollection('lostfound'),
+      getCollection('quickLinks')
     ]);
     posts = postsData || [];
     events = eventsData || [];
@@ -134,6 +132,7 @@ async function loadData(){
     aidOffers = aidOffData || [];
     directory = dirData || [];
     lostfound = lfData || [];
+    quickLinks = qlData || [];
   }catch(e){
     console.error('load error',e);
     fetchError = true;
@@ -151,10 +150,9 @@ async function loadData(){
       tools = (Array.isArray(tools) && tools.length) ? tools : (mock.tools || []);
       aidRequests = (Array.isArray(aidRequests) && aidRequests.length) ? aidRequests : (mock.aidRequests || []);
       aidOffers = (Array.isArray(aidOffers) && aidOffers.length) ? aidOffers : (mock.aidOffers || []);
-      // directory: provide mock directory if backend returned none; render will
-      // limit sensitive fields for guests while signed-in users see full details.
       directory = (Array.isArray(directory) && directory.length) ? directory : (mock.directory || []);
       lostfound = (Array.isArray(lostfound) && lostfound.length) ? lostfound : (mock.lostfound || []);
+      quickLinks = (Array.isArray(quickLinks) && quickLinks.length) ? quickLinks : (mock.quickLinks || []);
       console.log('merged mock data from db.json for empty collections');
     }catch(f){
       if(fetchError) console.warn('failed to load mock db.json',f);
@@ -201,6 +199,8 @@ async function loadData(){
     // persist initial set (so they won't reappear after refresh)
     if(typeof saveReadNotifications === 'function') saveReadNotifications();
   }
+  // Display quick links from the sidebar
+  if(typeof displayQuickLinks === 'function') displayQuickLinks();
   // refresh weather for local sidebar
   try{ updateWeather(); }catch(e){}
 }
@@ -1004,7 +1004,11 @@ async function markFound(id){
 }
 
 // --- MODALS ---
-function openModal(id){ document.getElementById(id).classList.add('open'); }
+function openModal(id){ 
+  document.getElementById(id).classList.add('open');
+  // Load admin lists when opening respective modals
+  if(id === 'quickLinksModal' && typeof displayQuickLinksAdmin === 'function') displayQuickLinksAdmin();
+}
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
 // Close modals on Escape
@@ -1106,6 +1110,8 @@ function refreshStats(){
     const elS = document.getElementById('statShared'); if(elS) elS.textContent = shared;
     const elH = document.getElementById('statHelped'); if(elH) elH.textContent = helped;
     const elE = document.getElementById('statEvents'); if(elE) elE.textContent = evs;
+    // Also refresh quick links display
+    if(typeof displayQuickLinks === 'function') displayQuickLinks();
   }catch(e){ console.warn('refreshStats error',e); }
 }
 
@@ -1251,6 +1257,129 @@ async function deleteCommentFirestore(postId, comment){
   await postRef.update({comments: firebase.firestore.FieldValue.increment(-1)});
 }
 
+// ============================================================
+// QUICK LINKS MANAGEMENT
+// ============================================================
+function displayQuickLinks(){
+  const el = document.getElementById('quickLinksList');
+  if(!el) return;
+  el.innerHTML = '';
+  if(!Array.isArray(quickLinks) || quickLinks.length === 0){
+    // show default quick links if none exist
+    const defaults = [
+      {id:'default-trash', icon:'🗑️', title:'Trash Schedule', url:'Thursday 7AM'},
+      {id:'default-emergency', icon:'📞', title:'Emergency Numbers', url:'911 | Non-emergency: 555-0123'},
+      {id:'default-council', icon:'🏛️', title:'City Council', url:'Next meeting: Feb 15'},
+      {id:'default-guidelines', icon:'📜', title:'Guidelines', url:'Be kind, be helpful, be a neighbor!'}
+    ];
+    defaults.forEach(link => {
+      const li = document.createElement('li');
+      li.textContent = link.icon + ' ' + link.title;
+      li.onclick = () => toast(link.icon + ' ' + link.title + ': ' + link.url);
+      li.style.cursor = 'pointer';
+      el.appendChild(li);
+    });
+  } else {
+    quickLinks.forEach(link => {
+      const li = document.createElement('li');
+      li.textContent = (link.icon || '🔗') + ' ' + (link.title || 'Link');
+      li.onclick = () => {
+        if(link.url.startsWith('http')){
+          window.open(link.url, '_blank');
+        } else {
+          toast((link.icon || '🔗') + ' ' + link.title + ': ' + link.url);
+        }
+      };
+      li.style.cursor = 'pointer';
+      el.appendChild(li);
+    });
+  }
+  // Show edit button only to admins
+  const editBtn = document.getElementById('editQuickLinksBtn');
+  if(editBtn && window._currentUser && ADMIN_UIDS.includes(window._currentUser.uid)){
+    editBtn.style.display = 'inline-block';
+  } else if(editBtn){
+    editBtn.style.display = 'none';
+  }
+}
+
+function displayQuickLinksAdmin(){
+  const el = document.getElementById('quickLinksAdminList');
+  if(!el) return;
+  el.innerHTML = '';
+  if(!Array.isArray(quickLinks) || quickLinks.length === 0){
+    el.innerHTML = '<p style="color:#999;font-size:14px;">No quick links added yet. Add one below!</p>';
+  } else {
+    quickLinks.forEach(link => {
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee;';
+      div.innerHTML = `
+        <span><strong>${link.icon || '🔗'} ${link.title || 'Link'}</strong><br><small style="color:#666;">${link.url || 'N/A'}</small></span>
+        <button class="btn-icon" onclick="deleteQuickLink('${link.id}')" style="background:none;border:none;color:#f44336;cursor:pointer;font-size:16px;">✕</button>
+      `;
+      el.appendChild(div);
+    });
+  }
+}
+
+async function addQuickLink(){
+  const icon = document.getElementById('qlIcon')?.value?.trim() || '🔗';
+  const title = document.getElementById('qlTitle')?.value?.trim();
+  const url = document.getElementById('qlURL')?.value?.trim();
+  
+  if(!title || !url){
+    toast('⚠️ Title and URL are required');
+    return;
+  }
+  
+  const link = {
+    id: Date.now().toString(),
+    icon,
+    title,
+    url
+  };
+  
+  try{
+    await addDoc('quickLinks', link);
+    // Clear inputs
+    document.getElementById('qlIcon').value = '';
+    document.getElementById('qlTitle').value = '';
+    document.getElementById('qlURL').value = '';
+    toast('✅ Quick link added!');
+    displayQuickLinksAdmin();
+    displayQuickLinks();
+  }catch(e){
+    console.error('Error adding quick link:', e);
+    toast('❌ Failed to add quick link');
+  }
+}
+
+async function deleteQuickLink(id){
+  if(!confirm('Delete this quick link?')) return;
+  try{
+    // Delete from Firestore
+    if(window._db){
+      const snap = await _db.collection('quickLinks').where('id','==',id).get();
+      const batch = _db.batch();
+      snap.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    }
+    // Delete from Render
+    try{
+      await fetch(`https://neighborhub.onrender.com/api/quickLinks/${id}`, {method: 'DELETE'});
+    }catch(e){
+      console.warn('Delete from Render failed', e);
+    }
+    // Remove from local array
+    quickLinks = quickLinks.filter(link => link.id !== id);
+    toast('🗑️ Quick link deleted');
+    displayQuickLinksAdmin();
+    displayQuickLinks();
+  }catch(e){
+    console.error('Error deleting quick link:', e);
+    toast('❌ Failed to delete quick link');
+  }
+}
 
 // ============================================================
 // INIT

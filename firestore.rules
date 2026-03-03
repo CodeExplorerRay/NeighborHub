@@ -80,6 +80,12 @@ service cloud.firestore {
       allow update, delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
     }
     
+    // QUICK LINKS (admin-managed community links)
+    match /quickLinks/{linkId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+    
     // USERS (for welcome tracking + notifications + settings)
     match /users/{userId} {
       allow read: if request.auth.uid == userId || isAdmin();

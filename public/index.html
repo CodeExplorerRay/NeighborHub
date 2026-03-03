@@ -106,12 +106,12 @@
     </div>
    </div>
    <div class="card">
-    <div class="sb-title">⚡ Quick Links</div>
-    <ul class="links">
-     <li onclick="toast('🗑️ Trash pickup: Thursday 7AM')">🗑️ Trash Schedule</li>
-     <li onclick="toast('📞 Emergency: 911 | Non-emergency: 555-0123')">📞 Emergency Numbers</li>
-     <li onclick="toast('🏛️ Next council meeting: Feb 15')">🏛️ City Council</li>
-     <li onclick="toast('📜 Be kind, be helpful, be a neighbor!')">📜 Guidelines</li>
+    <div class="sb-title" style="display:flex;justify-content:space-between;align-items:center;">
+     <span>⚡ Quick Links</span>
+     <button class="btn-icon auth-required" id="editQuickLinksBtn" onclick="openModal('quickLinksModal')" style="display:none;font-size:14px;padding:4px 8px;" title="Edit Quick Links">⚙️</button>
+    </div>
+    <ul class="links" id="quickLinksList">
+     <!-- Injected by JS -->
     </ul>
    </div>
   </div>
@@ -310,6 +310,28 @@
   <div class="modal-foot">
    <button class="btn btn-s" onclick="closeModal('lfModal')">Cancel</button>
    <button class="btn btn-p" onclick="createLostFound()">Post</button>
+  </div>
+ </div>
+</div>
+
+<!-- Quick Links Modal (Admin Only) -->
+<div class="modal-bg" id="quickLinksModal" onclick="if(event.target===this)closeModal(this.id)">
+ <div class="modal" style="max-width:500px;">
+  <div class="modal-title">⚡ Manage Quick Links</div>
+  <div id="quickLinksAdminList" style="max-height:300px;overflow-y:auto;margin-bottom:15px;">
+   <!-- Injected by JS -->
+  </div>
+  <div class="fg" style="border-top:1px solid #ddd;padding-top:15px;">
+   <label>Add New Link</label>
+   <div style="display:flex;gap:8px;margin-bottom:8px;">
+    <input id="qlIcon" placeholder="Icon (emoji)" maxlength="2" style="width:50px;">
+    <input id="qlTitle" placeholder="Title" style="flex:1;">
+    <input id="qlURL" placeholder="URL or text" style="flex:2;">
+   </div>
+   <button class="btn btn-p" onclick="addQuickLink()" style="width:100%;">Add Link</button>
+  </div>
+  <div class="modal-foot">
+   <button class="btn btn-s" onclick="closeModal('quickLinksModal')">Done</button>
   </div>
  </div>
 </div>

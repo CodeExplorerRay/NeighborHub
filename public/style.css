@@ -221,6 +221,10 @@ aid-btn.done{background:var(--primary-bg)!important;color:var(--primary)!importa
 @keyframes tIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes tOut{from{opacity:1}to{opacity:0}}
 
+/* BUTTON STYLES */
+.btn-icon{background:none;border:none;cursor:pointer;font-size:1rem;padding:4px 8px;border-radius:6px;color:var(--text-light);transition:all .2s}
+.btn-icon:hover{color:var(--primary);background:var(--primary-bg)}
+
 /* RESPONSIVE */
 @media(max-width:860px){
   .board-layout{grid-template-columns:1fr}.sidebar{display:none}
