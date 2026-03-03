@@ -1,4 +1,10 @@
-
+<p align="left" style="display: flex; align-items: center;">
+ 
+  <img 
+    src="https://raw.githubusercontent.com/CodeExplorerRay/NeighborHub/5f9db71273634aa2ccc88bd5f7f2150ce4fd1539/public/NeighborHub.svg" 
+    alt="NeighborHub Title"
+  />
+</p>
 
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
