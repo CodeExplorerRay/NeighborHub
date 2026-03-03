@@ -42,15 +42,26 @@ async function getCollection(name){
   if(window._db){
     try{
       const snap = await _db.collection(name).orderBy('id','desc').get();
-      return snap.docs.map(d => d.data());
+      const results = snap.docs.map(d => d.data());
+      if(Array.isArray(results) && results.length) return results;
+      // if Firestore returned no documents, fall through to Render fallback
     }catch(e){
-      // if ordering fails (no field), fallback to simple get
-      const snap = await _db.collection(name).get();
-      return snap.docs.map(d => d.data());
+      // ordering may fail or other Firestore error; try a simple get
+      try{
+        const snap = await _db.collection(name).get();
+        const results = snap.docs.map(d => d.data());
+        if(Array.isArray(results) && results.length) return results;
+      }catch(err){
+        // continue to fallback
+      }
     }
   }
   // fallback to Render API for mock data
-  try{ return await fetch(`https://neighborhub.onrender.com/api/${name}`).then(r=>r.json()); }catch(e){ return []; }
+  try{
+    const resp = await fetch(`https://neighborhub.onrender.com/api/${name}`);
+    const json = await resp.json();
+    return Array.isArray(json) ? json : [];
+  }catch(e){ return []; }
 }
 
 async function addDoc(name, obj){
