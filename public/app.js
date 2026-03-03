@@ -39,19 +39,45 @@ let directory = [];
 let lostfound = [];
 
 async function getCollection(name){
-  // Always fetch mock data from Render API
+  let fireData = [];
+  if(window._db){
+    try{
+      const snap = await _db.collection(name).orderBy('id','desc').get();
+      fireData = snap.docs.map(d => d.data());
+    }catch(e){
+      try{
+        const snap = await _db.collection(name).get();
+        fireData = snap.docs.map(d => d.data());
+      }catch(_){
+        fireData = [];
+      }
+    }
+  }
+
+  let renderData = [];
   try{
     const resp = await fetch(`https://neighborhub.onrender.com/api/${name}`);
     const json = await resp.json();
-    return Array.isArray(json) ? json : [];
+    renderData = Array.isArray(json) ? json : [];
   }catch(e){
     console.warn('Render API fetch failed', e);
-    return [];
   }
+
+  // combine: prefer Firestore entries, append any Render items that aren't already present
+  if(fireData.length){
+    const ids = new Set(fireData.map(i=>i.id));
+    const extras = renderData.filter(i=>!ids.has(i.id));
+    return fireData.concat(extras);
+  }
+  return renderData;
 }
 
 async function addDoc(name, obj){
-  // Persist mock data to Render API
+  // add to Firestore if available
+  if(window._db){
+    try{ await _db.collection(name).add(obj); }catch(e){ console.warn('Firestore add failed', e);}  
+  }
+  // persist mock data to Render as well so two sources stay in sync
   try{
     const res = await fetch(`https://neighborhub.onrender.com/api/${name}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});
     return await res.json();
@@ -71,6 +97,14 @@ async function updateDocByQuery(name, queryField, queryValue, updates){
   }
   // fallback: try Render PUT endpoints (assumes numeric id and endpoint exists)
   if(updates && updates.id){
+    // update Firestore as well
+    if(window._db){
+      try{
+        const snap = await _db.collection(name).where(queryField,'==',queryValue).get();
+        const promises = snap.docs.map(d=>d.ref.update(updates));
+        await Promise.all(promises);
+      }catch(e){ console.warn('Firestore update failed', e);}      
+    }
     try{
       await fetch(`https://neighborhub.onrender.com/api/${name}/${updates.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updates)});
     }catch(e){
