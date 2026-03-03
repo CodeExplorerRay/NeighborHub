@@ -1,0 +1,16 @@
+<svg width="900" height="140" viewBox="0 0 900 140" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .neighbor { fill: #1f4e79; }   /* Deep blue */
+    .hub { fill: #57C84D; }        /* Light green */
+    .subtitle { fill: #444444; font-size: 28px; font-weight: 500; }
+  </style>
+
+  <text x="0" y="70" font-family="Segoe UI, Arial, sans-serif" font-size="64" font-weight="700">
+    <tspan class="neighbor">Neighbor</tspan><tspan class="hub">Hub</tspan>
+    
+  </text>
+
+  <text x="2" y="115" class="subtitle" font-family="Segoe UI, Arial, sans-serif">
+    A Lightweight Community Board
+  </text>
+</svg>
