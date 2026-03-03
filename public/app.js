@@ -49,8 +49,8 @@ async function getCollection(name){
       return snap.docs.map(d => d.data());
     }
   }
-  // fallback to server API if still present
-  try{ return await fetch(`/api/${name}`).then(r=>r.json()); }catch(e){ return []; }
+  // fallback to Render API for mock data
+  try{ return await fetch(`https://neighborhub.onrender.com/api/${name}`).then(r=>r.json()); }catch(e){ return []; }
 }
 
 async function addDoc(name, obj){
@@ -58,7 +58,7 @@ async function addDoc(name, obj){
     await _db.collection(name).add(obj);
     return obj;
   }
-  const res = await fetch(`/api/${name}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});
+  const res = await fetch(`https://neighborhub.onrender.com/api/${name}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)});
   return await res.json();
 }
 
@@ -70,9 +70,9 @@ async function updateDocByQuery(name, queryField, queryValue, updates){
     await Promise.all(promises);
     return;
   }
-  // fallback: try server PUT endpoints (assumes numeric id and endpoint exists)
+  // fallback: try Render PUT endpoints (assumes numeric id and endpoint exists)
   if(updates && updates.id){
-    await fetch(`/api/${name}/${updates.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updates)});
+    await fetch(`https://neighborhub.onrender.com/api/${name}/${updates.id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updates)});
   }
 }
 
@@ -155,7 +155,7 @@ async function loadData(){
     _initialSnapshotDone = true;
     updateBadges();
     // persist initial set (so they won't reappear after refresh)
-    saveReadNotifications();
+    if(typeof saveReadNotifications === 'function') saveReadNotifications();
   }
   // refresh weather for local sidebar
   try{ updateWeather(); }catch(e){}
