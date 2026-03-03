@@ -1312,14 +1312,62 @@ function displayQuickLinksAdmin(){
   } else {
     quickLinks.forEach(link => {
       const div = document.createElement('div');
+      div.id = 'ql-row-' + link.id;
       div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee;';
       div.innerHTML = `
-        <span><strong>${link.icon || '🔗'} ${link.title || 'Link'}</strong><br><small style="color:#666;">${link.url || 'N/A'}</small></span>
-        <button class="btn-icon" onclick="deleteQuickLink('${link.id}')" style="background:none;border:none;color:#f44336;cursor:pointer;font-size:16px;">✕</button>
+        <span id="ql-view-${link.id}"><strong>${link.icon || '🔗'} ${link.title || 'Link'}</strong><br><small style="color:#666;" id="ql-url-${link.id}">${link.url || 'N/A'}</small></span>
+        <span>
+          <button class="btn-icon" onclick="editQuickLink('${link.id}')" title="Edit" style="margin-right:8px">✏️</button>
+          <button class="btn-icon" onclick="deleteQuickLink('${link.id}')" style="color:#f44336">✕</button>
+        </span>
       `;
       el.appendChild(div);
     });
   }
+}
+
+function escHtml(str){ return (str||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function editQuickLink(id){
+  const row = document.getElementById('ql-row-' + id);
+  if(!row) return;
+  const link = quickLinks.find(l=>l.id===id);
+  if(!link) return;
+  row.innerHTML = '';
+  const container = document.createElement('div');
+  container.style.display = 'flex';
+  container.style.justifyContent = 'space-between';
+  container.style.alignItems = 'center';
+  container.style.gap = '8px';
+  const left = document.createElement('div');
+  left.style.display = 'flex';
+  left.style.gap = '8px';
+  const iconIn = document.createElement('input'); iconIn.value = link.icon || ''; iconIn.id = 'editIcon-' + id; iconIn.style.width = '50px';
+  const titleIn = document.createElement('input'); titleIn.value = link.title || ''; titleIn.id = 'editTitle-' + id; titleIn.style.flex = '1';
+  const urlIn = document.createElement('input'); urlIn.value = link.url || ''; urlIn.id = 'editURL-' + id; urlIn.style.flex = '2';
+  left.appendChild(iconIn); left.appendChild(titleIn); left.appendChild(urlIn);
+  const actions = document.createElement('div');
+  actions.innerHTML = `<button class="btn btn-s" onclick="saveQuickLink('${id}')">Save</button> <button class="btn btn-s" onclick="displayQuickLinksAdmin()">Cancel</button>`;
+  container.appendChild(left);
+  container.appendChild(actions);
+  row.appendChild(container);
+}
+
+async function saveQuickLink(id){
+  const icon = document.getElementById('editIcon-' + id)?.value?.trim() || '🔗';
+  const title = document.getElementById('editTitle-' + id)?.value?.trim();
+  const url = document.getElementById('editURL-' + id)?.value?.trim();
+  if(!title || !url){ toast('⚠️ Title and content are required'); return; }
+  const updates = { id: id, icon, title, url };
+  try{
+    await updateDocByQuery('quickLinks','id',id, updates);
+    // also try Render PUT to keep mock backend in sync
+    try{ await fetch(`https://neighborhub.onrender.com/api/quickLinks/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updates)}); }catch(e){ console.warn('Render update failed',e); }
+    // update local array
+    quickLinks = quickLinks.map(l=> l.id===id ? {...l,icon,title,url} : l);
+    toast('✅ Quick link updated');
+    displayQuickLinksAdmin(); displayQuickLinks();
+  }catch(e){ console.error('saveQuickLink failed',e); toast('❌ Failed to save quick link'); }
 }
 
 async function addQuickLink(){
