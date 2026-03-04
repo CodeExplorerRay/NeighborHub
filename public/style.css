@@ -38,6 +38,13 @@ body.signed-in .auth-required{display:inline-block !important;}
 .tab.active{color:var(--primary);border-bottom-color:var(--primary)}
 .tab-badge{background:var(--accent);color:#fff;font-size:.65rem;padding:1px 7px;border-radius:10px;font-weight:700}
 
+/* ADMIN DASHBOARD TABS */
+.admin-tab{padding:10px 16px;border:none;background:transparent;color:var(--text-light);font-size:.9rem;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;display:flex;align-items:center;gap:6px;white-space:nowrap}
+.admin-tab:hover{color:var(--primary);background:rgba(45,106,79,0.05)}
+.admin-tab.active{color:var(--primary);border-bottom-color:var(--primary);background:rgba(45,106,79,0.08)}
+.admin-tab-content{padding:0}
+.admin-tab-content.active{display:block}
+
 /* MAIN */
 .main{max-width:1100px;margin:0 auto;padding:20px}
 .panel{display:none;animation:fadeUp .35s ease}
@@ -220,10 +227,6 @@ aid-btn.done{background:var(--primary-bg)!important;color:var(--primary)!importa
 .toast{background:var(--text);color:#fff;padding:12px 20px;border-radius:var(--radius-sm);font-size:.88rem;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;animation:tIn .35s ease,tOut .35s ease 2.5s forwards}
 @keyframes tIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes tOut{from{opacity:1}to{opacity:0}}
-
-/* BUTTON STYLES */
-.btn-icon{background:none;border:none;cursor:pointer;font-size:1rem;padding:4px 8px;border-radius:6px;color:var(--text-light);transition:all .2s}
-.btn-icon:hover{color:var(--primary);background:var(--primary-bg)}
 
 /* RESPONSIVE */
 @media(max-width:860px){

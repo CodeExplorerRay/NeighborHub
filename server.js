@@ -33,6 +33,7 @@ function readData(){
       posts: [],
       events: [],
       tools: [],
+      quickLinks: [],
       aidRequests: [],
       aidOffers: [],
       directory: [],

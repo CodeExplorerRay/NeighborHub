@@ -32,8 +32,12 @@ let tools = [];
 let aidRequests = [];
 let aidOffers = [];
 let directory = [];
-let lostfound = [];
 let quickLinks = [];
+
+// ============================================================
+// DATA LOADING (uses Firestore when available)
+// ============================================================
+let lostfound = [];
 
 async function getCollection(name){
   let fireData = [];
@@ -115,15 +119,15 @@ async function loadData(){
   let fetchError = false;
   try{
     // Fetch all collections in parallel using Promise.all() for faster load
-    const [postsData, eventsData, toolsData, aidReqData, aidOffData, dirData, lfData, qlData] = await Promise.all([
+    const [postsData, eventsData, toolsData, aidReqData, aidOffData, dirData, qData, lfData] = await Promise.all([
       getCollection('posts'),
       getCollection('events'),
       getCollection('tools'),
       getCollection('aidRequests'),
       getCollection('aidOffers'),
       getCollection('directory'),
-      getCollection('lostfound'),
-      getCollection('quickLinks')
+      getCollection('quickLinks'),
+      getCollection('lostfound')
     ]);
     posts = postsData || [];
     events = eventsData || [];
@@ -131,8 +135,8 @@ async function loadData(){
     aidRequests = aidReqData || [];
     aidOffers = aidOffData || [];
     directory = dirData || [];
+    quickLinks = qData || [];
     lostfound = lfData || [];
-    quickLinks = qlData || [];
   }catch(e){
     console.error('load error',e);
     fetchError = true;
@@ -150,9 +154,11 @@ async function loadData(){
       tools = (Array.isArray(tools) && tools.length) ? tools : (mock.tools || []);
       aidRequests = (Array.isArray(aidRequests) && aidRequests.length) ? aidRequests : (mock.aidRequests || []);
       aidOffers = (Array.isArray(aidOffers) && aidOffers.length) ? aidOffers : (mock.aidOffers || []);
+      // directory: provide mock directory if backend returned none; render will
+      // limit sensitive fields for guests while signed-in users see full details.
       directory = (Array.isArray(directory) && directory.length) ? directory : (mock.directory || []);
-      lostfound = (Array.isArray(lostfound) && lostfound.length) ? lostfound : (mock.lostfound || []);
       quickLinks = (Array.isArray(quickLinks) && quickLinks.length) ? quickLinks : (mock.quickLinks || []);
+      lostfound = (Array.isArray(lostfound) && lostfound.length) ? lostfound : (mock.lostfound || []);
       console.log('merged mock data from db.json for empty collections');
     }catch(f){
       if(fetchError) console.warn('failed to load mock db.json',f);
@@ -183,6 +189,7 @@ async function loadData(){
   }
 
   renderFeed(); renderEvents(); renderTools(); renderAid(); renderDirectory(); renderLostFound();
+  renderQuickLinks();
   updateBadges();
   generateNotifications();
   // On first load treat existing items as read so badges only show new items
@@ -199,8 +206,6 @@ async function loadData(){
     // persist initial set (so they won't reappear after refresh)
     if(typeof saveReadNotifications === 'function') saveReadNotifications();
   }
-  // Display quick links from the sidebar
-  if(typeof displayQuickLinks === 'function') displayQuickLinks();
   // refresh weather for local sidebar
   try{ updateWeather(); }catch(e){}
 }
@@ -475,6 +480,20 @@ function renderLostFound(){
       </div>
     </div>
   `).join('');
+}
+
+// Render Quick Links in the sidebar (display only; management in admin dashboard)
+function renderQuickLinks(){
+  const el = document.getElementById('quickLinksList');
+  if(!el) return;
+  const items = (quickLinks || []).filter(q => !q.deleted).slice().sort((a,b)=> (a.order||0)-(b.order||0));
+  el.innerHTML = items.map(i => {
+    const label = i.title || i.text || 'Link';
+    const url = i.url || '';
+    const display = url ? `<a href="${url}" target="_blank" rel="noopener" style="color:var(--primary);text-decoration:none">${label}</a>` : `${label}`;
+    return `<li>${i.icon? i.icon + ' ' : ''}${display}</li>`;
+  }).join('');
+  if(items.length === 0) el.innerHTML = '<li style="color:var(--text-light);font-size:0.9rem">No quick links</li>';
 }
 
 // ============================================================
@@ -918,10 +937,174 @@ function openAdminPanel(){
     toast('🔐 Admin access only');
     return;
   }
-  const modal = document.getElementById('adminModal');
+  const modal = document.getElementById('adminDashboardModal');
   if(!modal) return;
+  // Initialize dashboard and load data
+  switchAdminTab('dashboard');
+  loadAdminDashboardStats();
   loadReports();
   modal.classList.add('open');
+}
+
+// Load and display admin dashboard stats
+function loadAdminDashboardStats(){
+  const reports = window.reportedContent || [];
+  const unresolved = reports.filter(r => !r.resolved).length;
+  const links = (quickLinks || []).filter(q => !q.deleted).length;
+  document.getElementById('admin-stat-reports').textContent = unresolved;
+  document.getElementById('admin-stat-quicklinks').textContent = links;
+}
+
+// Switch admin dashboard tabs
+function switchAdminTab(tab){
+  // Hide all tabs
+  document.querySelectorAll('.admin-tab-content').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.admin-tab').forEach(btn => btn.classList.remove('active'));
+  // Show selected tab
+  const tabEl = document.getElementById(`admin-tab-${tab}`);
+  if(tabEl) tabEl.style.display = 'block';
+  // Mark tab btn as active
+  event && event.target && event.target.classList.add('active');
+  
+  // Load data for specific tab
+  if(tab === 'quicklinks') renderAdminQuickLinksTab();
+  if(tab === 'reports') renderAdminReportsTab();
+}
+
+// Render Quick Links admin tab
+function renderAdminQuickLinksTab(){
+  const container = document.getElementById('quickLinksListAdmin');
+  if(!container) return;
+  const sorted = (quickLinks || []).slice().sort((a,b)=> (a.order||0)-(b.order||0));
+  container.innerHTML = sorted.map(i => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--bg-alt);border-radius:6px;border-left:4px solid var(--accent)">
+      <div style="flex:1">
+        <div><strong>${i.icon||'•'} ${i.title}</strong> <small style="color:var(--text-light)">ord:${i.order||0}</small></div>
+        <div style="font-size:0.85rem;color:var(--text-light)">${i.url ? `<a href="${i.url}" target="_blank" style="color:var(--primary)">Link ↗</a> • ` : ''}${i.type||'Other'}</div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-s" onclick="editQuickLinkForm(${i.id})">Edit</button>
+        <button class="btn btn-o" onclick="deleteQuickLink(${i.id})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+  if(sorted.length === 0) container.innerHTML = '<div style="color:var(--text-light);text-align:center;padding:20px">No quick links yet. Click "+ Add New" to create one.</div>';
+}
+
+// Render Reports admin tab
+function renderAdminReportsTab(){
+  const container = document.getElementById('reportsListAdmin');
+  if(!container) return;
+  const reports = window.reportedContent || [];
+  if(reports.length === 0){
+    container.innerHTML = '<div style="color:var(--text-light);text-align:center;padding:20px">No reported content yet.</div>';
+    return;
+  }
+  container.innerHTML = reports.map((r,idx) => `
+    <div style="padding:12px;background:var(--bg-alt);border-radius:6px;border-left:4px solid ${r.resolved?'var(--bg)':'#E74C3C'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div style="flex:1">
+          <div><strong>${r.type}</strong> (ID: ${r.targetId}) <small style="color:var(--text-light)">• ${new Date(r.reportedAt).toLocaleDateString()}</small></div>
+          <div style="font-size:0.9rem;margin:6px 0;color:var(--text)">${r.reason}</div>
+          <div style="font-size:0.85rem;color:var(--text-light)">By: ${r.reporterName || 'Anonymous'}</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:0.85rem;padding:4px 8px;background:${r.resolved?'rgba(0,255,0,0.2)':'rgba(255,0,0,0.2)'};border-radius:4px;color:${r.resolved?'#27AE60':'#E74C3C'};font-weight:bold">${r.resolved?'Resolved':'Pending'}</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:6px">
+        ${!r.resolved ? `<button class="btn btn-s" onclick="markReportAsResolved(${idx})">Mark Resolved</button>` : ''}
+        <button class="btn btn-o" onclick="deleteReport(${idx})">Delete</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Quick Link Form Management
+let currentEditingLinkId = null;
+
+function openQuickLinkForm(){
+  currentEditingLinkId = null;
+  document.getElementById('qlForm-title').value = '';
+  document.getElementById('qlForm-icon').value = '';
+  document.getElementById('qlForm-type').value = '';
+  document.getElementById('qlForm-url').value = '';
+  document.getElementById('qlForm-order').value = '0';
+  document.getElementById('quickLinkFormContainer').style.display = 'block';
+  document.getElementById('qlForm-title').focus();
+}
+
+function editQuickLinkForm(id){
+  const item = (quickLinks || []).find(q => String(q.id) === String(id));
+  if(!item) return;
+  currentEditingLinkId = id;
+  document.getElementById('qlForm-title').value = item.title || '';
+  document.getElementById('qlForm-icon').value = item.icon || '';
+  document.getElementById('qlForm-type').value = item.type || '';
+  document.getElementById('qlForm-url').value = item.url || '';
+  document.getElementById('qlForm-order').value = item.order || 0;
+  document.getElementById('quickLinkFormContainer').style.display = 'block';
+  document.getElementById('qlForm-title').focus();
+}
+
+function closeQuickLinkForm(){
+  document.getElementById('quickLinkFormContainer').style.display = 'none';
+  currentEditingLinkId = null;
+}
+
+async function saveQuickLinkForm(){
+  const title = document.getElementById('qlForm-title').value.trim();
+  const icon = document.getElementById('qlForm-icon').value.trim();
+  const type = document.getElementById('qlForm-type').value.trim();
+  const url = document.getElementById('qlForm-url').value.trim();
+  const order = parseInt(document.getElementById('qlForm-order').value || '0', 10);
+  
+  if(!title){
+    toast('⚠️ Title is required');
+    return;
+  }
+  
+  try{
+    if(currentEditingLinkId){
+      // Update existing
+      const updates = { id: currentEditingLinkId, title, icon, type, url, order };
+      await updateDocByQuery('quickLinks', 'id', currentEditingLinkId, updates);
+      toast('✅ Quick Link updated');
+    }else{
+      // Create new
+      const obj = { id: Date.now(), title, icon, type, url, order };
+      await addDoc('quickLinks', obj);
+      toast('✅ Quick Link created');
+    }
+    closeQuickLinkForm();
+    await loadData();
+    renderAdminQuickLinksTab();
+    renderQuickLinks();
+  }catch(e){
+    console.warn(e);
+    toast('❌ Save failed');
+  }
+}
+
+// Delete a quick link
+async function deleteQuickLink(id){
+  if(!window._currentUser || !ADMIN_UIDS.includes(window._currentUser.uid)){
+    toast('🔐 Admin access only');
+    return;
+  }
+  if(!confirm('Delete this quick link? This cannot be undone.')) return;
+  try{
+    // Mark as deleted (soft delete) so both Firestore and Render reflect the change
+    const updates = { id: id, deleted: true };
+    await updateDocByQuery('quickLinks', 'id', id, updates);
+    toast('🗑️ Quick Link removed');
+    await loadData();
+    renderAdminQuickLinksTab();
+    renderQuickLinks();
+  }catch(e){
+    console.warn(e);
+    toast('❌ Delete failed');
+  }
 }
 
 // Load and display reports
@@ -1004,11 +1187,7 @@ async function markFound(id){
 }
 
 // --- MODALS ---
-function openModal(id){ 
-  document.getElementById(id).classList.add('open');
-  // Load admin lists when opening respective modals
-  if(id === 'quickLinksModal' && typeof displayQuickLinksAdmin === 'function') displayQuickLinksAdmin();
-}
+function openModal(id){ document.getElementById(id).classList.add('open'); }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 
 // Close modals on Escape
@@ -1110,8 +1289,6 @@ function refreshStats(){
     const elS = document.getElementById('statShared'); if(elS) elS.textContent = shared;
     const elH = document.getElementById('statHelped'); if(elH) elH.textContent = helped;
     const elE = document.getElementById('statEvents'); if(elE) elE.textContent = evs;
-    // Also refresh quick links display
-    if(typeof displayQuickLinks === 'function') displayQuickLinks();
   }catch(e){ console.warn('refreshStats error',e); }
 }
 
@@ -1257,177 +1434,6 @@ async function deleteCommentFirestore(postId, comment){
   await postRef.update({comments: firebase.firestore.FieldValue.increment(-1)});
 }
 
-// ============================================================
-// QUICK LINKS MANAGEMENT
-// ============================================================
-function displayQuickLinks(){
-  const el = document.getElementById('quickLinksList');
-  if(!el) return;
-  el.innerHTML = '';
-  if(!Array.isArray(quickLinks) || quickLinks.length === 0){
-    // show default quick links if none exist
-    const defaults = [
-      {id:'default-trash', icon:'🗑️', title:'Trash Schedule', url:'Thursday 7AM'},
-      {id:'default-emergency', icon:'📞', title:'Emergency Numbers', url:'911 | Non-emergency: 555-0123'},
-      {id:'default-council', icon:'🏛️', title:'City Council', url:'Next meeting: Feb 15'},
-      {id:'default-guidelines', icon:'📜', title:'Guidelines', url:'Be kind, be helpful, be a neighbor!'}
-    ];
-    defaults.forEach(link => {
-      const li = document.createElement('li');
-      li.textContent = link.icon + ' ' + link.title;
-      li.onclick = () => toast(link.icon + ' ' + link.title + ': ' + link.url);
-      li.style.cursor = 'pointer';
-      el.appendChild(li);
-    });
-  } else {
-    quickLinks.forEach(link => {
-      const li = document.createElement('li');
-      li.textContent = (link.icon || '🔗') + ' ' + (link.title || 'Link');
-      li.onclick = () => {
-        if(link.url.startsWith('http')){
-          window.open(link.url, '_blank');
-        } else {
-          toast((link.icon || '🔗') + ' ' + link.title + ': ' + link.url);
-        }
-      };
-      li.style.cursor = 'pointer';
-      el.appendChild(li);
-    });
-  }
-  // Show edit button only to admins
-  const editBtn = document.getElementById('editQuickLinksBtn');
-  if(editBtn && window._currentUser && ADMIN_UIDS.includes(window._currentUser.uid)){
-    editBtn.style.display = 'inline-block';
-  } else if(editBtn){
-    editBtn.style.display = 'none';
-  }
-}
-
-function displayQuickLinksAdmin(){
-  const el = document.getElementById('quickLinksAdminList');
-  if(!el) return;
-  el.innerHTML = '';
-  if(!Array.isArray(quickLinks) || quickLinks.length === 0){
-    el.innerHTML = '<p style="color:#999;font-size:14px;">No quick links added yet. Add one below!</p>';
-  } else {
-    quickLinks.forEach(link => {
-      const div = document.createElement('div');
-      div.id = 'ql-row-' + link.id;
-      div.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #eee;';
-      div.innerHTML = `
-        <span id="ql-view-${link.id}"><strong>${link.icon || '🔗'} ${link.title || 'Link'}</strong><br><small style="color:#666;" id="ql-url-${link.id}">${link.url || 'N/A'}</small></span>
-        <span>
-          <button class="btn-icon" onclick="editQuickLink('${link.id}')" title="Edit" style="margin-right:8px">✏️</button>
-          <button class="btn-icon" onclick="deleteQuickLink('${link.id}')" style="color:#f44336">✕</button>
-        </span>
-      `;
-      el.appendChild(div);
-    });
-  }
-}
-
-function escHtml(str){ return (str||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
-
-function editQuickLink(id){
-  const row = document.getElementById('ql-row-' + id);
-  if(!row) return;
-  const link = quickLinks.find(l=>l.id===id);
-  if(!link) return;
-  row.innerHTML = '';
-  const container = document.createElement('div');
-  container.style.display = 'flex';
-  container.style.justifyContent = 'space-between';
-  container.style.alignItems = 'center';
-  container.style.gap = '8px';
-  const left = document.createElement('div');
-  left.style.display = 'flex';
-  left.style.gap = '8px';
-  const iconIn = document.createElement('input'); iconIn.value = link.icon || ''; iconIn.id = 'editIcon-' + id; iconIn.style.width = '50px';
-  const titleIn = document.createElement('input'); titleIn.value = link.title || ''; titleIn.id = 'editTitle-' + id; titleIn.style.flex = '1';
-  const urlIn = document.createElement('input'); urlIn.value = link.url || ''; urlIn.id = 'editURL-' + id; urlIn.style.flex = '2';
-  left.appendChild(iconIn); left.appendChild(titleIn); left.appendChild(urlIn);
-  const actions = document.createElement('div');
-  actions.innerHTML = `<button class="btn btn-s" onclick="saveQuickLink('${id}')">Save</button> <button class="btn btn-s" onclick="displayQuickLinksAdmin()">Cancel</button>`;
-  container.appendChild(left);
-  container.appendChild(actions);
-  row.appendChild(container);
-}
-
-async function saveQuickLink(id){
-  const icon = document.getElementById('editIcon-' + id)?.value?.trim() || '🔗';
-  const title = document.getElementById('editTitle-' + id)?.value?.trim();
-  const url = document.getElementById('editURL-' + id)?.value?.trim();
-  if(!title || !url){ toast('⚠️ Title and content are required'); return; }
-  const updates = { id: id, icon, title, url };
-  try{
-    await updateDocByQuery('quickLinks','id',id, updates);
-    // also try Render PUT to keep mock backend in sync
-    try{ await fetch(`https://neighborhub.onrender.com/api/quickLinks/${id}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(updates)}); }catch(e){ console.warn('Render update failed',e); }
-    // update local array
-    quickLinks = quickLinks.map(l=> l.id===id ? {...l,icon,title,url} : l);
-    toast('✅ Quick link updated');
-    displayQuickLinksAdmin(); displayQuickLinks();
-  }catch(e){ console.error('saveQuickLink failed',e); toast('❌ Failed to save quick link'); }
-}
-
-async function addQuickLink(){
-  const icon = document.getElementById('qlIcon')?.value?.trim() || '🔗';
-  const title = document.getElementById('qlTitle')?.value?.trim();
-  const url = document.getElementById('qlURL')?.value?.trim();
-  
-  if(!title || !url){
-    toast('⚠️ Title and URL are required');
-    return;
-  }
-  
-  const link = {
-    id: Date.now().toString(),
-    icon,
-    title,
-    url
-  };
-  
-  try{
-    await addDoc('quickLinks', link);
-    // Clear inputs
-    document.getElementById('qlIcon').value = '';
-    document.getElementById('qlTitle').value = '';
-    document.getElementById('qlURL').value = '';
-    toast('✅ Quick link added!');
-    displayQuickLinksAdmin();
-    displayQuickLinks();
-  }catch(e){
-    console.error('Error adding quick link:', e);
-    toast('❌ Failed to add quick link');
-  }
-}
-
-async function deleteQuickLink(id){
-  if(!confirm('Delete this quick link?')) return;
-  try{
-    // Delete from Firestore
-    if(window._db){
-      const snap = await _db.collection('quickLinks').where('id','==',id).get();
-      const batch = _db.batch();
-      snap.docs.forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
-    }
-    // Delete from Render
-    try{
-      await fetch(`https://neighborhub.onrender.com/api/quickLinks/${id}`, {method: 'DELETE'});
-    }catch(e){
-      console.warn('Delete from Render failed', e);
-    }
-    // Remove from local array
-    quickLinks = quickLinks.filter(link => link.id !== id);
-    toast('🗑️ Quick link deleted');
-    displayQuickLinksAdmin();
-    displayQuickLinks();
-  }catch(e){
-    console.error('Error deleting quick link:', e);
-    toast('❌ Failed to delete quick link');
-  }
-}
 
 // ============================================================
 // INIT
